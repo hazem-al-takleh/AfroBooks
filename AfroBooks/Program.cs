@@ -20,6 +20,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlSer
     b => b.MigrationsAssembly("AfroBooks.DataAccess")
     ));
 
+//builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+//    .AddEntityFrameworkStores<ApplicationDbContext>();
+
 //// adding IdentityUser as the default identity service for login, register
 
 //builder.Services.AddDefaultIdentity<IdentityUser>(
