@@ -1,0 +1,90 @@
+﻿@model ShoppingCart
+
+<form method="post">
+    <div class="card container m-3 ">
+        <div class="card-header bg-primary text-light  row ">
+            <div class="col-10">
+                <h1 class="text-white">@Model.Product.Title</h1>
+                <div class="p-3">
+                    <h3 class="text-white-60">by @Model.Product.Author</h3>
+                    <h5 class="">ISBN-10: @Model.Product.ISBN</h5>
+                    <span class="badge bg-info pt-2" style="height:30px;">@Model.Product.ProductCoverType.Name</span>
+                    <span class="badge bg-warning pt-2" style="height:30px;">@Model.Product.ProductCategory.Name</span>
+                </div>
+            </div>
+            <div class="col-2 text-end">
+                <img src="/@Model.Product.CoverImageURL" class="rounded col-12 align-center align-middle" />
+            </div>
+        </div>
+
+        <div class="card-body row container container rounded">
+            @Html.Raw(Model.Product.Description)
+
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Quantity</th>
+                        <th>1-50</th>
+                        <th>51-100</th>
+                        <th>100+</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Price</td>
+                        <td>@Model.Product.PriceUnit</td>
+                        <td>@Model.Product.Price50Unit</td>
+                        <td>@Model.Product.Price100Unit</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="row col-12">
+
+                <div class="col-4 text-primary" place><h4>Count</h4></div>
+                <div class="counter col-8">
+                    <span class="down bg" onClick='decreaseCount(event, this)'><i class="bi bi-dash-circle"></i></span>
+                    <input type="text" asp-for="NumofProduct" style="width:auto;">
+                    <span class="up" onClick='increaseCount(event, this)'><i class="bi bi-plus-circle"></i></span>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <div class="card-footer p-3 m-3">
+        <div class="row">
+            <div class="col-6">
+                <button type="submit" class="btn btn-primary form-control" style="height:50px;">
+                    Add to Cart
+                </button>
+            </div>
+            <div class="col-6">
+                <a class="btn btn-secondary form-control" asp-action="Index" style="height:50px;">Back to List</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts{
+    <script type="text/javascript">
+        function increaseCount(a, b) {
+            var input = b.previousElementSibling;
+            var value = parseInt(input.value, 10);
+            value = isNaN(value) ? 0 : value;
+            value++;
+            input.value = value;
+        }
+
+        function decreaseCount(a, b) {
+            var input = b.nextElementSibling;
+            var value = parseInt(input.value, 10);
+            if (value > 1) {
+                value = isNaN(value) ? 0 : value;
+                value--;
+                input.value = value;
+            }
+        }
+    </script>
+    }

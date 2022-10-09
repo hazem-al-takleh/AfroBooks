@@ -1,0 +1,6 @@
+﻿@if (TempData["dbmsg"] != null)
+{
+    <script>
+        toastr.success("@TempData["dbmsg"]")
+    </script>
+}

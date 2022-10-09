@@ -1,0 +1,33 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+@model IEnumerable<Product>
+
+<div class="row pb-3">
+    @foreach (var item in Model)
+    {
+        <div class="col-lg-3 col-md-6">
+            <div class="row p-2">
+                <div class="card" style="width: 18rem;">
+                    <img src="/@item.CoverImageURL" class="card-img-top col-12 p-1" alt="...">
+                    <div class="card-body">
+                        @if (@item.Title.Length < 35)
+                        {
+                            <h5 class="card-title">@item.Title</h5>
+                        }
+                        else
+                        {
+                            <h5 class="card-title ">@item.Title.Substring(0,32)...</h5>
+                        }
+                        <p class="card-title">By: @item.Author</p>
+                        <p>
+                            List Price: <strike>@item.ListPrice$</strike><br>As low as: @item.Price100Unit$
+                        </p>
+                        <a class="btn btn-primary" style="width:-webkit-fill-available" asp-action="Details" asp-route-id="@item.Id">Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
