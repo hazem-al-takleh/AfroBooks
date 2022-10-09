@@ -12,6 +12,8 @@ namespace AfroBooks.DataAccess.Repositry.IRepositry
         ICategoryRepository Categories { get; }
         ICoverTypeRepository CoverTypes { get; }
         IProducrRepository Products { get; }
+        ICompanyRepository Companies { get; }
+
 
         Task Save();
     }

@@ -20,15 +20,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlSer
     b => b.MigrationsAssembly("AfroBooks.DataAccess")
     ));
 
-//builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-//    .AddEntityFrameworkStores<ApplicationDbContext>();
-
 //// adding IdentityUser as the default identity service for login, register
-
-//builder.Services.AddDefaultIdentity<IdentityUser>(
-//// only sign in if the email is confirmed
-////options => options.SignIn.RequireConfirmedAccount = true
-//).AddEntityFrameworkStores<IdentityApplicationDbContext>();
+builder.Services.AddDefaultIdentity<IdentityUser>(
+// only sign in if the email is confirmed
+//options => options.SignIn.RequireConfirmedAccount = true
+).AddEntityFrameworkStores<ApplicationDbContext>();
 
 // discarded after adopting unit of work in our project
 //builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -61,6 +57,8 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
+// added with razor pages of identity
+app.MapRazorPages();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllerRoute(
