@@ -6,29 +6,59 @@
 
 <div class="container ">
     <div class="row align-items-center g-lg-5 py-5">
-        <div class="col-lg-7 text-center text-lg-start">
+        <div class="col-lg-7 text-center text-lg-start" style="align-self: start;">
             <h1 class="display-4 fw-bold lh-1 mb-3">Create a new account</h1>
             <p class="col-lg-10 fs-4">Below is an example form built entirely with Bootstrap’s form controls. Each required form group has a validation state that can be triggered by attempting to submit the form without completing it.</p>
         </div>
         <div class="col-md-10 mx-auto col-lg-5">
             <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="p-4 p-md-5 border rounded-3 bg-light">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                @*<h3 class="mb-3">Create a new account</h3>*@
-
                 <div class="form-floating mb-3">
-                    <input input type="email" id="floatingInput" placeholder="name@example.com" asp-for="Input.Email" class="form-control" autocomplete="email" aria-required="true" />
+                    <input placeholder="John Doe" asp-for="Input.Name" class="form-control" aria-required="true" />
+                    <label asp-for="Input.Name"></label>
+                    <span asp-validation-for="Input.Name" class="text-danger"></span>
+                </div>
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.PhoneNumber" class="form-control" aria-required="true" />
+                    <label asp-for="Input.PhoneNumber"></label>
+                    <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="email" placeholder="name@example.com" asp-for="Input.Email" class="form-control" autocomplete="email" aria-required="true" />
                     <label asp-for="Input.Email"></label>
                     <span asp-validation-for="Input.Email" class="text-danger"></span>
                 </div>
                 <div class="form-floating  mb-3">
-                    <input type="password" id="floatingPassword" placeholder="Password" asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" />
+                    <input type="password" placeholder="Password" asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" />
                     <label asp-for="Input.Password"></label>
                     <span asp-validation-for="Input.Password" class="text-danger"></span>
                 </div>
                 <div class="form-floating mb-3">
-                    <input type="password" id="floatingPassword" placeholder="ConfirmPassword" asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" />
+                    <input type="password" placeholder="ConfirmPassword" asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" />
                     <label asp-for="Input.ConfirmPassword"></label>
                     <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                </div>
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.City" class="form-control" aria-required="true" />
+                    <label asp-for="Input.City"></label>
+                    <span asp-validation-for="Input.City" class="text-danger"></span>
+                </div>
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.StreetName" class="form-control" aria-required="true" />
+                    <label asp-for="Input.StreetName"></label>
+                    <span asp-validation-for="Input.StreetName" class="text-danger"></span>
+                </div>
+                <div class="form-floating mb-3">
+                    <select asp-for="Input.Role" id="Input_Role" asp-items="@Model.Input.RolesList" class="form-select">
+                        <option disabled selected>---Select Role---</option>
+                    </select>
+                    <label asp-for="Input.Role">Role</label>
+                </div>
+                <div class="form-floating mb-3" id="CompanyIdLabel" style="display:none;">
+                    <select asp-for="Input.CompanyId" asp-items="@Model.Input.CompaniesList" class="form-select">
+                        <option disabled selected>---Select Company---</option>
+                    </select>
+                    <label asp-for="Input.CompanyId">Company</label>
                 </div>
 
                 <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Sign up</button>
@@ -40,20 +70,20 @@
                         @{
                             if ((Model.ExternalLogins?.Count ?? 0) == 0)
                             {
-                                
+
                             }
                             else
                             {
-                                <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                                    <div>
-                                        <p>
-                                            @foreach (var provider in Model.ExternalLogins)
+                                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
+                                        <div>
+                                            <p>
+                                                @foreach (var provider in Model.ExternalLogins)
                                             {
-                                                <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
+                                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
                                             }
-                                        </p>
-                                    </div>
-                                </form>
+                                            </p>
+                                        </div>
+                                    </form>
                             }
                         }
                     </section>
@@ -68,4 +98,19 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            $('#Input_Role').change(function () {
+                var selection = $('#Input_Role Option:Selected').text();
+                if (selection != 'Company') {
+                    $('#CompanyId').hide();
+                    $('#CompanyIdLabel').hide();
+                }
+                else {
+                    $('#CompanyId').show();
+                    $('#CompanyIdLabel').show();
+                }
+            })
+        })
+    </script>
 }

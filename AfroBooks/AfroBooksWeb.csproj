@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AfroBooks.DataAccess\AfroBooks.DataAccess.csproj" />
+    <ProjectReference Include="..\AfroBooks.Utility\AfroBooks.Utility.csproj" />
   </ItemGroup>
 
   <ItemGroup>

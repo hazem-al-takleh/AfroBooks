@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Builder;
 using AfroBooks.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using System.Data;
+using System.Security.Principal;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using AfroBooks.Utility;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,11 +24,17 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlSer
     b => b.MigrationsAssembly("AfroBooks.DataAccess")
     ));
 
-//// adding IdentityUser as the default identity service for login, register
-builder.Services.AddDefaultIdentity<IdentityUser>(
-// only sign in if the email is confirmed
-//options => options.SignIn.RequireConfirmedAccount = true
-).AddEntityFrameworkStores<ApplicationDbContext>();
+// commented upon creating a new identity with roles
+//////// adding IdentityUser as the default identity service for login, register
+////builder.Services.AddDefaultIdentity<IdentityUser>(
+////// only sign in if the email is confirmed
+//////options => options.SignIn.RequireConfirmedAccount = true
+////).AddEntityFrameworkStores<ApplicationDbContext>();
+///
+//creating a new custom identity with roles
+builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddDefaultTokenProviders()
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+
 
 // discarded after adopting unit of work in our project
 //builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -34,6 +44,9 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 //builder.Services.AddRazorPages();
+
+
+builder.Services.AddSingleton<IEmailSender, EmailSender>();
 
 var app = builder.Build();
 
