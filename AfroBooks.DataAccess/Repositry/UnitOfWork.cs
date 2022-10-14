@@ -17,6 +17,8 @@ namespace AfroBooks.DataAccess.Repositry
         public ICoverTypeRepository CoverTypes { get; private set; }
         public IProducrRepository Products { get; private set; }
         public ICompanyRepository Companies { get; private set; }
+        public IApplicationUserRepository ApplicationUsers { get; private set; }
+        public IShoppingCartProductRepository ShoppingCartProducts { get; private set; }
 
         private ApplicationDbContext _context;
 
@@ -27,6 +29,8 @@ namespace AfroBooks.DataAccess.Repositry
             CoverTypes = new CoverTypeRepository(_context);
             Products = new ProductRepository(_context);
             Companies = new CompanyRepository(_context);
+            ApplicationUsers = new ApplicationUserRepository(_context);
+            ShoppingCartProducts = new ShoppingCartProductRepository(_context);
         }
 
         public async Task Save()

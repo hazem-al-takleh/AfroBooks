@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace AfroBooks.Models.ViewModels
 {
-    public class ShoppingCart
+    public class ShoppingCartProductVM
     {
+        public int ProductId { get; set; }
         public Product Product { get; set; }
         [Range(1,int.MaxValue)]
-        public int NumofProduct { get; set; }
+        public int? Count { get; set; }
     }
 }

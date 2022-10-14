@@ -1,8 +1,11 @@
 ﻿using AfroBooks.DataAccess.Repositry.IRepositry;
 using AfroBooks.Models;
 using AfroBooks.Models.ViewModels;
+using AfroBooks.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace AfroBooksWeb.Areas.Customer.Controllers
 {
@@ -24,14 +27,64 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
             return View(productsList);
         }
 
-        public IActionResult Details(int id)
+        [Authorize]
+        public IActionResult Details(int productId)
         {
-            ShoppingCart shoppingCart = new()
+            try
             {
-                Product = _unitOfWork.Products.GetFirstOrDefault(u => u.Id == id, "ProductCategory", "ProductCoverType"),
-                NumofProduct = 1
-            };
-            return View(shoppingCart);
+                // get the previous count of the shopping cart bag that has the asame product and user. it could be zero
+                int prevCount = _unitOfWork.ShoppingCartProducts.GetFirstOrDefault(u => u.ApplicationUserId == GetUserId() && u.ProductId == productId).Count;
+                ShoppingCartProductVM shoppingCart = new()
+                {
+                    ProductId = productId,
+                    Count = prevCount != 0 ? prevCount : 1,
+                    Product = _unitOfWork.Products.GetFirstOrDefault(u => u.Id == productId, "ProductCategory", "ProductCoverType")
+                };
+                return View(shoppingCart);
+            }
+            catch (NullReferenceException)
+            {
+                ShoppingCartProductVM shoppingCart = new()
+                {
+                    ProductId = productId,
+                    Count = 1,
+                    Product = _unitOfWork.Products.GetFirstOrDefault(u => u.Id == productId, "ProductCategory", "ProductCoverType")
+                };
+                return View(shoppingCart);
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public IActionResult Details(ShoppingCartProduct shoppingCartProduct)
+        {
+            shoppingCartProduct.ApplicationUserId = GetUserId();
+
+            ShoppingCartProduct dbshoppingCartProduct = _unitOfWork.ShoppingCartProducts.GetFirstOrDefault(
+            u => u.ApplicationUserId == shoppingCartProduct.ApplicationUserId && u.ProductId == shoppingCartProduct.ProductId);
+
+
+            if (dbshoppingCartProduct != null)
+                _unitOfWork.ShoppingCartProducts.Update(dbshoppingCartProduct, shoppingCartProduct.Count);
+            else
+                _unitOfWork.ShoppingCartProducts.Add(shoppingCartProduct);
+            _unitOfWork.Save();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        private string GetUserId()
+        {
+            return GetUserClaim().Value;
+        }
+
+        private Claim GetUserClaim()
+        {
+            ClaimsIdentity claimsIdentity = (ClaimsIdentity)User.Identity;
+            // claim has the Id of the user that is logged in, the extraction happes with the help of Authorize
+            Claim claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            return claim;
         }
 
         public IActionResult Privacy()

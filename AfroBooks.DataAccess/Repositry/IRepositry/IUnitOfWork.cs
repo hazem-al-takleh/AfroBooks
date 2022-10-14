@@ -13,6 +13,8 @@ namespace AfroBooks.DataAccess.Repositry.IRepositry
         ICoverTypeRepository CoverTypes { get; }
         IProducrRepository Products { get; }
         ICompanyRepository Companies { get; }
+        IApplicationUserRepository ApplicationUsers { get; }
+        IShoppingCartProductRepository ShoppingCartProducts { get; }
 
 
         Task Save();

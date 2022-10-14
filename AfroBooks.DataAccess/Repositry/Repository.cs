@@ -60,6 +60,7 @@ namespace AfroBooks.DataAccess.Repositry
             query = query.Where(filter);
             return query.FirstOrDefault();
         }
+
         public void Remove(TEntity entity)
         {
             DbSet.Remove(entity);
@@ -86,11 +87,20 @@ namespace AfroBooks.DataAccess.Repositry
             return query.FirstOrDefault();
         }
 
+        public IEnumerable<TEntity> GetAll(Expression<Func<TEntity, bool>> filter, params string[] includedProperties)
+        {
+            IQueryable<TEntity> query = DbSet;
+            query = query.Where(filter);
+            query = _IncludeProperties(includedProperties, query);
+            return query.ToList();
+        }
+
         private static IQueryable<TEntity> _IncludeProperties(string[] includedProperties, IQueryable<TEntity> query)
         {
             foreach (string property in includedProperties)
-                    query = query.Include(property);
+                query = query.Include(property);
             return query;
         }
+
     }
 }

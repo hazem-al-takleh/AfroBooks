@@ -4,6 +4,7 @@ using AfroBooks.DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AfroBooks.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221013165207_ModifyCartAgain")]
+    partial class ModifyCartAgain
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -149,7 +151,7 @@ namespace AfroBooks.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("AfroBooks.Models.ShoppingCartProduct", b =>
+            modelBuilder.Entity("AfroBooks.Models.ShoppingCart", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -173,7 +175,7 @@ namespace AfroBooks.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ShoppingCartProducts");
+                    b.ToTable("ShoppingCarts");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -421,7 +423,7 @@ namespace AfroBooks.Migrations
                     b.Navigation("ProductCoverType");
                 });
 
-            modelBuilder.Entity("AfroBooks.Models.ShoppingCartProduct", b =>
+            modelBuilder.Entity("AfroBooks.Models.ShoppingCart", b =>
                 {
                     b.HasOne("AfroBooks.Models.ApplicationUser", "ApplicationUser")
                         .WithMany()

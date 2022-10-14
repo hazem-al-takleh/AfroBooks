@@ -152,75 +152,85 @@ namespace AfroBooksWeb.Areas.Identity.Pages.Account
         {
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-            if (ModelState.IsValid)
+
+            if (!ModelState.IsValid)
+                return Page();
+
+            var user = CreateUser<ApplicationUser>();
+            await AppendUserProps(user);
+            var result = await _userManager.CreateAsync(user, Input.Password);
+            if (!result.Succeeded)
             {
-                var user = CreateUser();
-
-                await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-                user.Name = Input.Name;
-                user.PhoneNumber = Input.PhoneNumber;
-                user.City = Input.City;
-                user.StreetName = Input.StreetName;
-                if (Input.CompanyId != null)
-                {
-                    user.CompanyId = Input.CompanyId;
-                    user.Company = _unitOfWork.Companies.GetFirstOrDefault(i => i.Id == Input.CompanyId);
-                }
-
-                var result = await _userManager.CreateAsync(user, Input.Password);
-
-                if (result.Succeeded)
-                {
-                    _logger.LogInformation("User created a new account with password.");
-
-                    await _userManager.AddToRoleAsync(user, Input.Role == null ? SD.RolesList[0] : Input.Role);
-
-                    var userId = await _userManager.GetUserIdAsync(user);
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                        protocol: Request.Scheme);
-
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
-
-                    if (_userManager.Options.SignIn.RequireConfirmedAccount)
-                    {
-                        return RedirectToPage("RegisterConfirmation", new
-                        {
-                            email = Input.Email,
-                            returnUrl = returnUrl
-                        });
-                    }
-                    else
-                    {
-                        await _signInManager.SignInAsync(user, isPersistent: false);
-                        return LocalRedirect(returnUrl);
-                    }
-                }
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
+                return Page();
             }
-            return Page();
 
+            // successful user creation; new user with new Id and email
+            _logger.LogInformation("User created a new account with password.");
+
+            await _userManager.AddToRoleAsync(user, Input.Role == null ? SD.RolesList[0] : Input.Role);
+
+            await EmailSending(returnUrl, user);
+            return await CheckConfirmation(returnUrl, user);
         }
 
-        private ApplicationUser CreateUser()
+        private async Task<IActionResult> CheckConfirmation(string returnUrl, ApplicationUser user)
+        {
+            if (_userManager.Options.SignIn.RequireConfirmedAccount)
+            {
+                return RedirectToPage("RegisterConfirmation", new
+                {
+                    email = Input.Email,
+                    returnUrl = returnUrl
+                });
+            }
+            else
+            {
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                return LocalRedirect(returnUrl);
+            }
+        }
+
+        private async Task EmailSending(string returnUrl, ApplicationUser user)
+        {
+            var userId = await _userManager.GetUserIdAsync(user);
+            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            var callbackUrl = Url.Page(
+                "/Account/ConfirmEmail",
+                pageHandler: null,
+                values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
+                protocol: Request.Scheme);
+
+            await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+        }
+
+        private async Task AppendUserProps(ApplicationUser user)
+        {
+            await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+            await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+            user.Name = Input.Name;
+            user.PhoneNumber = Input.PhoneNumber;
+            user.City = Input.City;
+            user.StreetName = Input.StreetName;
+            user.CompanyId = Input.CompanyId;
+            user.Company = _unitOfWork.Companies.GetFirstOrDefault(i => i.Id == Input.CompanyId);
+        }
+
+        private UserType CreateUser<UserType>()
         {
             try
             {
-                return Activator.CreateInstance<ApplicationUser>();
+                return Activator.CreateInstance<UserType>();
             }
             catch
             {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                    $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
+                throw new InvalidOperationException($"Can't create an instance of '{nameof(UserType)}'. " +
+                    $"Ensure that '{nameof(UserType)}' is not an abstract class and has a parameterless constructor, or alternatively " +
                     $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
             }
         }

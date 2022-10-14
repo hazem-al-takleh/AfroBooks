@@ -16,6 +16,9 @@ namespace AfroBooks.DataAccess.Repositry.IRepositry
         void Add(TEntity entity);
         void Remove(TEntity entity);
         void RemoveRange(IEnumerable<TEntity> entity);
+        // GetAll + GetFirstOrDefault = GetAllFiltered
+        IEnumerable<TEntity> GetAll(Expression<Func<TEntity, bool>> filter, params string[] includedProperties);
+
 
         // not included because its logic is not generic in all tables/objects
         //void Update(T entity);

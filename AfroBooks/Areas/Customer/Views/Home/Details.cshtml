@@ -1,6 +1,7 @@
-﻿@model ShoppingCart
+﻿@model ShoppingCartProductVM
 
 <form method="post">
+    <input hidden asp-for="ProductId" />
     <div class="card container m-3 ">
         <div class="card-header bg-primary text-light  row ">
             <div class="col-10">
@@ -38,14 +39,17 @@
                     </tr>
                 </tbody>
             </table>
+            <div class="container col-12" style="width=100%">
+                <div style="text-align: -webkit-center;">
 
-            <div class="row col-12">
-
-                <div class="col-4 text-primary" place><h4>Count</h4></div>
-                <div class="counter col-8">
-                    <span class="down bg" onClick='decreaseCount(event, this)'><i class="bi bi-dash-circle"></i></span>
-                    <input type="text" asp-for="NumofProduct" style="width:auto;">
-                    <span class="up" onClick='increaseCount(event, this)'><i class="bi bi-plus-circle"></i></span>
+                    <div class="row col-6">
+                        <div class="col-3 text-primary"><h4>Count</h4></div>
+                        <div class="counter col-3">
+                            <span class="down btn-group" role="group" onClick='decreaseCount(event, this)'><i class="bi bi-dash-circle"></i></span>
+                            <input type="text" asp-for="Count" style="width:auto;">
+                            <span class="up btn-group" role="group" onClick='increaseCount(event, this)'><i class="bi bi-plus-circle"></i></span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
