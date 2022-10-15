@@ -20,6 +20,10 @@ namespace AfroBooks.DataAccess.Repositry
         public IApplicationUserRepository ApplicationUsers { get; private set; }
         public IShoppingCartProductRepository ShoppingCartProducts { get; private set; }
 
+        public IOrderDetailRepository OrdersDetails { get; private set; }
+
+        public IOrderHeaderRepository OrdersHeaders { get; private set; }
+
         private ApplicationDbContext _context;
 
         public UnitOfWork(ApplicationDbContext dbContext)
@@ -31,11 +35,13 @@ namespace AfroBooks.DataAccess.Repositry
             Companies = new CompanyRepository(_context);
             ApplicationUsers = new ApplicationUserRepository(_context);
             ShoppingCartProducts = new ShoppingCartProductRepository(_context);
+            OrdersHeaders = new OrderHeaderRepository(_context);
+            OrdersDetails = new OrderDetailRepository(_context);
         }
 
-        public async Task Save()
+        public void Save()
         {
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
         }
     }
 }

@@ -171,8 +171,7 @@ namespace AfroBooksWeb.Areas.Identity.Pages.Account
             // successful user creation; new user with new Id and email
             _logger.LogInformation("User created a new account with password.");
 
-            await _userManager.AddToRoleAsync(user, Input.Role == null ? SD.RolesList[0] : Input.Role);
-
+            await _userManager.AddToRoleAsync(user, Input.Role == null ? SD.RoleIndivisual : Input.Role);
             await EmailSending(returnUrl, user);
             return await CheckConfirmation(returnUrl, user);
         }

@@ -9,7 +9,10 @@ namespace AfroBooks.Models.ViewModels
 	public class ShoppingCartVM
 	{
         public IEnumerable<ShoppingCartProduct> ListShoppingCartProducts { get; set; }
-        public double OrderTotal { get; set; }
+        // contained in orderHeader
+        //public double OrderTotal { get; set; }
+        public OrderHeader OrderHeader { get; set; }
+
 
     }
 }

@@ -16,7 +16,11 @@ namespace AfroBooks.DataAccess.Repositry.IRepositry
         IApplicationUserRepository ApplicationUsers { get; }
         IShoppingCartProductRepository ShoppingCartProducts { get; }
 
+        IOrderDetailRepository OrdersDetails { get; }
+        IOrderHeaderRepository OrdersHeaders { get; }
 
-        Task Save();
+
+
+        void Save();
     }
 }

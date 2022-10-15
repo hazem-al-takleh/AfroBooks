@@ -14,6 +14,8 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IUnitOfWork _unitOfWork;
+        public string ApplicationUserId { get; private set; }
+
 
         public HomeController(ILogger<HomeController> logger, IUnitOfWork unitOfWork)
         {
@@ -30,10 +32,11 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         [Authorize]
         public IActionResult Details(int productId)
         {
+            ApplicationUserId = GetUserId();
             try
             {
                 // get the previous count of the shopping cart bag that has the asame product and user. it could be zero
-                int prevCount = _unitOfWork.ShoppingCartProducts.GetFirstOrDefault(u => u.ApplicationUserId == GetUserId() && u.ProductId == productId).Count;
+                int prevCount = _unitOfWork.ShoppingCartProducts.GetFirstOrDefault(u => u.ApplicationUserId == ApplicationUserId && u.ProductId == productId).Count;
                 ShoppingCartProductVM shoppingCart = new()
                 {
                     ProductId = productId,
@@ -59,7 +62,9 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         [Authorize]
         public IActionResult Details(ShoppingCartProduct shoppingCartProduct)
         {
-            shoppingCartProduct.ApplicationUserId = GetUserId();
+            ApplicationUserId = GetUserId();
+
+            shoppingCartProduct.ApplicationUserId = ApplicationUserId;
 
             ShoppingCartProduct dbshoppingCartProduct = _unitOfWork.ShoppingCartProducts.GetFirstOrDefault(
             u => u.ApplicationUserId == shoppingCartProduct.ApplicationUserId && u.ProductId == shoppingCartProduct.ProductId);
@@ -76,15 +81,10 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
 
         private string GetUserId()
         {
-            return GetUserClaim().Value;
-        }
-
-        private Claim GetUserClaim()
-        {
             ClaimsIdentity claimsIdentity = (ClaimsIdentity)User.Identity;
             // claim has the Id of the user that is logged in, the extraction happes with the help of Authorize
             Claim claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
-            return claim;
+            return claim.Value;
         }
 
         public IActionResult Privacy()

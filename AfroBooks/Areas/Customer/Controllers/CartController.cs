@@ -1,4 +1,6 @@
-﻿using AfroBooks.DataAccess.Repositry.IRepositry;
+﻿using AfroBooks.DataAccess.Data;
+using AfroBooks.DataAccess.Repositry.IRepositry;
+using AfroBooks.Models;
 using AfroBooks.Models.ViewModels;
 using AfroBooks.Utility;
 using Microsoft.AspNetCore.Authorization;
@@ -9,11 +11,13 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
 {
     [Area("Customer")]
     [Authorize]
+    [BindProperties]
     public class CartController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
         public ShoppingCartVM ShoppingCartVM { get; set; }
         public double OrderTotal { get; set; }
+        public string ApplicationUserId { get; private set; }
 
         public CartController(IUnitOfWork unitOfWork)
         {
@@ -22,16 +26,19 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
 
         public IActionResult Index()
         {
+            ApplicationUserId = GetUserId();
+
             ShoppingCartVM = new ShoppingCartVM()
             {
-                ListShoppingCartProducts = _unitOfWork.ShoppingCartProducts.GetAll(u => u.ApplicationUserId == GetUserId(), "Product")
+                ListShoppingCartProducts = _unitOfWork.ShoppingCartProducts.GetAll(u => u.ApplicationUserId == ApplicationUserId, "Product"),
+                OrderHeader = new()
             };
             foreach (var cart in ShoppingCartVM.ListShoppingCartProducts)
             {
                 cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.PriceUnit, cart.Product.Price50Unit, cart.Product.Price100Unit);
                 OrderTotal += (cart.Price * cart.Count);
             }
-            ShoppingCartVM.OrderTotal = OrderTotal;
+            ShoppingCartVM.OrderHeader.OrderTotal = OrderTotal;
             return View(ShoppingCartVM);
         }
 
@@ -62,9 +69,72 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         }
         public IActionResult Summary()
         {
-            return View();
+            ApplicationUserId = GetUserId();
+
+            ShoppingCartVM = new ShoppingCartVM()
+            {
+                ListShoppingCartProducts = _unitOfWork.ShoppingCartProducts.GetAll(u => u.ApplicationUserId == ApplicationUserId, "Product"),
+                OrderHeader = new()
+            };
+
+            ShoppingCartVM.OrderHeader.ApplicationUser = _unitOfWork.ApplicationUsers.GetFirstOrDefault(u => u.Id == ApplicationUserId);
+            var orderUser = ShoppingCartVM.OrderHeader.ApplicationUser;
+            ShoppingCartVM.OrderHeader.PhoneNumber = orderUser.PhoneNumber;
+            ShoppingCartVM.OrderHeader.StreetAddress = orderUser.StreetName;
+            ShoppingCartVM.OrderHeader.City = orderUser.City;
+            ShoppingCartVM.OrderHeader.Name = orderUser.Name;
+
+            foreach (var cart in ShoppingCartVM.ListShoppingCartProducts)
+            {
+                cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.PriceUnit, cart.Product.Price50Unit, cart.Product.Price100Unit);
+                OrderTotal += (cart.Price * cart.Count);
+            }
+            ShoppingCartVM.OrderHeader.OrderTotal = OrderTotal;
+            return View(ShoppingCartVM);
         }
 
+        [HttpPost]
+        [ActionName("Summary")]
+        [ValidateAntiForgeryToken]
+        public IActionResult SummaryPost(ShoppingCartVM ShoppingCartVM)
+        {
+            ApplicationUserId = GetUserId();
+
+            ShoppingCartVM.ListShoppingCartProducts = _unitOfWork.ShoppingCartProducts.GetAll(u => u.ApplicationUserId == ApplicationUserId, "Product");
+            var carts = ShoppingCartVM.ListShoppingCartProducts;
+
+            var workingOrderHeader = ShoppingCartVM.OrderHeader;
+            workingOrderHeader.PaymentStatus = SD.PaymentStatusPending;
+            workingOrderHeader.OrderStatus = SD.StatusPending;
+            workingOrderHeader.OrderDate = DateTime.Now;
+            workingOrderHeader.ApplicationUserId = ApplicationUserId;
+
+            foreach (var cart in carts)
+            {
+                cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.PriceUnit, cart.Product.Price50Unit, cart.Product.Price100Unit);
+                OrderTotal += (cart.Price * cart.Count);
+            }
+            workingOrderHeader.OrderTotal = OrderTotal;
+
+            _unitOfWork.OrdersHeaders.Add(workingOrderHeader);
+            // we can't not command a save operation bc the adding of cars in db requires the id
+            // of the order that MUST BE SAVED BEFORE
+            _unitOfWork.Save();
+
+            foreach (var cart in carts)
+            {
+                _unitOfWork.OrdersDetails.Add(new OrderDetail()
+                {
+                    OrderId = workingOrderHeader.Id,
+                    ProductId = cart.ProductId,
+                    Count = cart.Count,
+                    Price = cart.Price,
+                });
+            }
+            _unitOfWork.ShoppingCartProducts.RemoveRange(carts);
+            _unitOfWork.Save();
+            return RedirectToAction("Index", "Cart");
+        }
 
         private double GetPriceBasedOnQuantity(int count, double priceUnit, double price50Unit, double price100Unit)
         {
@@ -73,15 +143,10 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
 
         private string GetUserId()
         {
-            return GetUserClaim().Value;
-        }
-
-        private Claim GetUserClaim()
-        {
             ClaimsIdentity claimsIdentity = (ClaimsIdentity)User.Identity;
             // claim has the Id of the user that is logged in, the extraction happes with the help of Authorize
-            Claim claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
-            return claim;
+            return claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
         }
+
     }
 }

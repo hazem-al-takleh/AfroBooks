@@ -53,5 +53,6 @@ namespace AfroBooks.Models
         [ForeignKey("CoverTypeId")]
         [ValidateNever]
         public CoverType ProductCoverType { get; set; }
+        
     }
 }
