@@ -10,6 +10,7 @@ namespace AfroBooks.DataAccess.Repositry.IRepositry
     public interface IRepository<TEntity> where TEntity : class
     { 
         IEnumerable<TEntity> GetAll();
+        TEntity? GetFirstOrDefaultNullable(Expression<Func<TEntity, bool>> filter);
         TEntity GetFirstOrDefault(Expression<Func<TEntity, bool>> filter);
         IEnumerable<TEntity> GetAll(params string[] includedProperties);
         TEntity GetFirstOrDefault(Expression<Func<TEntity, bool>> filter, params string[] includedProperties);

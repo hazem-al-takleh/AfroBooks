@@ -107,11 +107,11 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
             cartOrderViewModel.OrderHeader.ApplicationUserId = ApplicationUserId;
             cartOrderViewModel.OrderHeader.OrderTotal = OrderTotal;
 
-            var companyId = _unitOfWork
+            int? companyId = _unitOfWork
                 .ApplicationUsers
                 .GetFirstOrDefault(u => u.Id == ApplicationUserId)
                 .CompanyId;
-            if ((companyId != null) || (companyId != 0))
+            if (companyId != null)
             {
                 cartOrderViewModel.OrderHeader.OrderStatus = SD.StatusApproved;
                 cartOrderViewModel.OrderHeader.PaymentStatus = SD.PaymentStatusDelayedPayment;
@@ -142,22 +142,28 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
             _unitOfWork.OrdersDetails.AddRange(cartToDb);
 
             // stripe optinos for Indivisual users
-            var domain = HttpContext.Request.Host.Value;
+            string domain = "https://localhost:7205";
             var options = new SessionCreateOptions
             {
+                PaymentMethodTypes = new List<string>
+                {
+                  "card",
+                },
                 LineItems = new List<SessionLineItemOptions>(),
                 Mode = "payment",
-                SuccessUrl = $"{domain}/Customer/cart/OrderConfirmation?id={cartOrderViewModel.OrderHeader.Id}",
-                CancelUrl = $"{domain}/Customer/cart/Index",
+                SuccessUrl = domain + $"/Customer/cart/OrderConfirmation?id={cartOrderViewModel.OrderHeader.Id}",
+                CancelUrl = domain + $"/Customer/cart/Index",
             };
 
+
             foreach (var item in cartOrderViewModel.CartProducts)
+            {
                 options.LineItems.Add(new SessionLineItemOptions()
                 {
                     PriceData = new SessionLineItemPriceDataOptions
                     {
                         // UnitAmount is in cents
-                        UnitAmount = (long)(item.Price * 100),//20.00 -> 2000
+                        UnitAmount = (long)(item.Price * 100),
                         Currency = "usd",
                         ProductData = new SessionLineItemPriceDataProductDataOptions
                         {
@@ -166,14 +172,17 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                     },
                     Quantity = item.Count,
                 });
+            }
 
             // create a stripe service session based on the optinos which is the cart creds
             var service = new SessionService();
             Session session = service.Create(options);
             _unitOfWork.OrdersHeaders.UpdateStripePaymentID(cartOrderViewModel.OrderHeader.Id, session.Id, session.PaymentIntentId);
             _unitOfWork.Save();
+
             Response.Headers.Add("Location", session.Url);
             return new StatusCodeResult(303);
+
         }
 
         public IActionResult OrderConfirmation(int id)

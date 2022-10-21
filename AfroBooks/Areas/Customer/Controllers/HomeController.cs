@@ -31,19 +31,23 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         public IActionResult Details(int productId)
         {
             ApplicationUserId = GetUserId();
-            try
+            // get the previous count of the shopping cart bag that has the asame product and user. it could be zero
+            CartProduct? cart = _unitOfWork
+                .CartProducts
+                .GetFirstOrDefaultNullable(u => u.ApplicationUserId == ApplicationUserId && u.ProductId == productId);
+
+            if (cart != null)
             {
-                // get the previous count of the shopping cart bag that has the asame product and user. it could be zero
-                int prevCount = _unitOfWork.CartProducts.GetFirstOrDefault(u => u.ApplicationUserId == ApplicationUserId && u.ProductId == productId).Count;
+
                 CartProductViewModel shoppingCart = new()
                 {
                     ProductId = productId,
-                    Count = prevCount != 0 ? prevCount : 1,
+                    Count = cart.Count,
                     Product = _unitOfWork.Products.GetFirstOrDefault(u => u.Id == productId, "ProductCategory", "ProductCoverType")
                 };
                 return View(shoppingCart);
             }
-            catch (NullReferenceException)
+            else
             {
                 CartProductViewModel shoppingCart = new()
                 {
@@ -54,6 +58,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                 return View(shoppingCart);
             }
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]

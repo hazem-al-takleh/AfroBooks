@@ -54,6 +54,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
+
 var app = builder.Build();
 
 // HTTP request pipeline: How the app responds to web requests

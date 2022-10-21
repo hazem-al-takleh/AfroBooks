@@ -102,5 +102,11 @@ namespace AfroBooks.DataAccess.Repositry
             return query;
         }
 
+        public TEntity? GetFirstOrDefaultNullable(Expression<Func<TEntity, bool>> filter)
+        {
+            IQueryable<TEntity>? query = DbSet;
+            query = query.Where(filter);
+            return query.FirstOrDefault();
+        }
     }
 }
