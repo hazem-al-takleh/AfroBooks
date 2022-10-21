@@ -38,7 +38,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                 CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == ApplicationUserId, "Product"),
                 OrderHeader = new()
             };
-            CalcOrderTotal();
+            OrderTotal = CalcOrderTotal();
             cartOrderViewModel.OrderHeader.OrderTotal = OrderTotal;
             return View(cartOrderViewModel);
         }
@@ -78,7 +78,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                 CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == ApplicationUserId, "Product"),
                 OrderHeader = new()
             };
-            CalcOrderTotal();
+            OrderTotal = CalcOrderTotal();
 
             cartOrderViewModel.OrderHeader.ApplicationUser = _unitOfWork.ApplicationUsers.GetFirstOrDefault(u => u.Id == ApplicationUserId);
             var orderUser = cartOrderViewModel.OrderHeader.ApplicationUser;
@@ -98,14 +98,38 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         {
             ApplicationUserId = GetUserId();
             cartOrderViewModel.CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == ApplicationUserId, "Product");
-            CalcOrderTotal(cartOrderViewModel);
-            
-            SetOrderHeaderProps(cartOrderViewModel.OrderHeader);
+            OrderTotal = CalcOrderTotal(cartOrderViewModel);
+
+
+            cartOrderViewModel.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
+            cartOrderViewModel.OrderHeader.OrderStatus = SD.StatusPending;
+            cartOrderViewModel.OrderHeader.OrderDate = DateTime.Now;
+            cartOrderViewModel.OrderHeader.ApplicationUserId = ApplicationUserId;
+            cartOrderViewModel.OrderHeader.OrderTotal = OrderTotal;
+
+            var companyId = _unitOfWork
+                .ApplicationUsers
+                .GetFirstOrDefault(u => u.Id == ApplicationUserId)
+                .CompanyId;
+            if ((companyId != null) || (companyId != 0))
+            {
+                cartOrderViewModel.OrderHeader.OrderStatus = SD.StatusApproved;
+                cartOrderViewModel.OrderHeader.PaymentStatus = SD.PaymentStatusDelayedPayment;
+                cartOrderViewModel.OrderHeader.PaymentDueDate = DateTime.Now.AddDays(30);
+                _unitOfWork.OrdersHeaders.Add(cartOrderViewModel.OrderHeader);
+                _unitOfWork.Save();
+
+                return RedirectToAction("OrderConfirmation", "Cart", new { id = cartOrderViewModel.OrderHeader.Id });
+            }
+
+            cartOrderViewModel.OrderHeader.OrderStatus = SD.StatusPending;
+            cartOrderViewModel.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
+
+
             _unitOfWork.OrdersHeaders.Add(cartOrderViewModel.OrderHeader);
             // we can't not command a save operation bc the adding of cars in db requires the id
             // of the order that MUST BE SAVED BEFORE (depend on it)
             _unitOfWork.Save();
-
 
             List<OrderDetail> cartToDb = (from cart in cartOrderViewModel.CartProducts
                                           select new OrderDetail()
@@ -117,9 +141,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                                           }).ToList();
             _unitOfWork.OrdersDetails.AddRange(cartToDb);
 
-
-            // stripe settings
-
+            // stripe optinos for Indivisual users
             var domain = HttpContext.Request.Host.Value;
             var options = new SessionCreateOptions
             {
@@ -157,6 +179,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         public IActionResult OrderConfirmation(int id)
         {
             OrderHeader orderHeader = _unitOfWork.OrdersHeaders.GetFirstOrDefault(u => u.Id == id, "ApplicationUser");
+            // check if user is company and has not payed yet
             if (orderHeader.PaymentStatus != SD.PaymentStatusDelayedPayment)
             {
                 var service = new SessionService();
@@ -191,31 +214,26 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         }
 
 
-        private void CalcOrderTotal()
+        private double CalcOrderTotal()
         {
+            double OrderTotal = 0;
             foreach (CartProduct cart in cartOrderViewModel.CartProducts)
             {
                 cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.PriceUnit, cart.Product.Price50Unit, cart.Product.Price100Unit);
                 OrderTotal += (cart.Price * cart.Count);
             }
+            return OrderTotal;
         }
 
-        private void CalcOrderTotal(CartOrderViewModel cartOrderViewModel)
+        private double CalcOrderTotal(CartOrderViewModel cartOrderViewModel)
         {
+            double OrderTotal = 0;
             foreach (CartProduct cart in cartOrderViewModel.CartProducts)
             {
                 cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.PriceUnit, cart.Product.Price50Unit, cart.Product.Price100Unit);
                 OrderTotal += (cart.Price * cart.Count);
             }
-        }
-
-        private void SetOrderHeaderProps(OrderHeader workingOrderHeader)
-        {
-            workingOrderHeader.PaymentStatus = SD.PaymentStatusPending;
-            workingOrderHeader.OrderStatus = SD.StatusPending;
-            workingOrderHeader.OrderDate = DateTime.Now;
-            workingOrderHeader.ApplicationUserId = ApplicationUserId;
-            workingOrderHeader.OrderTotal = OrderTotal;
+            return OrderTotal;
         }
 
     }

@@ -12,7 +12,6 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
     [Area("Customer")]
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
         private readonly IUnitOfWork _unitOfWork;
         public string ApplicationUserId { get; private set; }
 
