@@ -9,6 +9,7 @@ using System.Data;
 using System.Security.Principal;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using AfroBooks.Utility;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,20 +32,17 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlSer
 //////options => options.SignIn.RequireConfirmedAccount = true
 ////).AddEntityFrameworkStores<ApplicationDbContext>();
 ///
+
 //creating a new custom identity with roles
-builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddDefaultTokenProviders()
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(
+    //options => options.SignIn.RequireConfirmedAccount = true
+    )
+    .AddDefaultTokenProviders()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-
-// discarded after adopting unit of work in our project
-//builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-//builder.Services.AddRazorPages();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-
 builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
-//builder.Services.AddRazorPages();
-
 
 builder.Services.AddSingleton<IEmailSender, EmailSender>();
 
@@ -55,6 +53,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = $"/Identity/Account/AccessDenied";
 });
 
+builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
 var app = builder.Build();
 
 // HTTP request pipeline: How the app responds to web requests
@@ -72,6 +71,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe:SecretKey").Get<string>();
+
 // added with identy
 app.UseAuthentication();
 
@@ -83,7 +84,7 @@ app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllerRoute(
       name: "areas",
-      pattern: "{area=Customer}/{controller=Home}/{action=Index}/{id?}"
+      pattern: "{area=Customer}/{controller=Home}/{action=Index}"
 
     );
 });

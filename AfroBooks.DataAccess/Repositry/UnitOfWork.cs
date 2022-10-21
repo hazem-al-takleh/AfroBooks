@@ -18,7 +18,7 @@ namespace AfroBooks.DataAccess.Repositry
         public IProducrRepository Products { get; private set; }
         public ICompanyRepository Companies { get; private set; }
         public IApplicationUserRepository ApplicationUsers { get; private set; }
-        public IShoppingCartProductRepository ShoppingCartProducts { get; private set; }
+        public ICartProductRepository CartProducts { get; private set; }
 
         public IOrderDetailRepository OrdersDetails { get; private set; }
 
@@ -34,7 +34,7 @@ namespace AfroBooks.DataAccess.Repositry
             Products = new ProductRepository(_context);
             Companies = new CompanyRepository(_context);
             ApplicationUsers = new ApplicationUserRepository(_context);
-            ShoppingCartProducts = new ShoppingCartProductRepository(_context);
+            CartProducts = new CartProductRepository(_context);
             OrdersHeaders = new OrderHeaderRepository(_context);
             OrdersDetails = new OrderDetailRepository(_context);
         }

@@ -4,7 +4,7 @@
 *@
 @{
 }
-@model ShoppingCartVM
+@model CartOrderViewModel
 
 <form method="post">
     <br />
@@ -22,7 +22,7 @@
             </div>
 
             <div class="card-body">
-                @foreach (var item in Model.ListShoppingCartProducts)
+                @foreach (var item in Model.CartProducts)
                 {
 
                     <div class="row">
@@ -53,7 +53,7 @@
                             </div>
                         </div>
                     </div>
-                    if (Model.ListShoppingCartProducts.Last()!=item)
+                    if (Model.CartProducts.Last()!=item)
                     {
                     <hr />
                     }

@@ -1,10 +1,13 @@
 ﻿@using AfroBooks.Models.ViewModels
-@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
-@model ShoppingCartVM
+@using AfroBooks.Utility
+@using Microsoft.Extensions.Options
+@*  this means that we are injecting stripesetting inside our view
+    we don't have to do anything in the configuratoin to use stripe
+    bc API key will be populated
+*@    
+@inject Microsoft.Extensions.Options.IOptions<StripeSettings> Stripe
+
+@model CartOrderViewModel
 
 <form method="post">
     <br />
@@ -71,7 +74,7 @@
                                 <span class="text-info">Order Summary:</span>
                             </h4>
                             <ul class="list-group mb-3">
-                                @foreach (var details in Model.ListShoppingCartProducts)
+                                @foreach (var details in Model.CartProducts)
                                 {
                                     <li class="list-group-item d-flex justify-content-between">
                                         <div>

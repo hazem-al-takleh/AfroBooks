@@ -17,7 +17,7 @@ namespace AfroBooks.DataAccess.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
         public DbSet<Company> Companies { get; set; }
-        public DbSet<ShoppingCartProduct> ShoppingCartProducts { get; set; }
+        public DbSet<CartProduct> CartProducts { get; set; }
         public DbSet<OrderHeader> OrdersHeaders { get; set; }
         public DbSet<OrderDetail> OrdersDetails { get; set; }
     }

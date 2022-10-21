@@ -14,7 +14,7 @@ namespace AfroBooks.DataAccess.Repositry.IRepositry
         IProducrRepository Products { get; }
         ICompanyRepository Companies { get; }
         IApplicationUserRepository ApplicationUsers { get; }
-        IShoppingCartProductRepository ShoppingCartProducts { get; }
+        ICartProductRepository CartProducts { get; }
 
         IOrderDetailRepository OrdersDetails { get; }
         IOrderHeaderRepository OrdersHeaders { get; }

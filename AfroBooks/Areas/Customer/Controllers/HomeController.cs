@@ -17,9 +17,8 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         public string ApplicationUserId { get; private set; }
 
 
-        public HomeController(ILogger<HomeController> logger, IUnitOfWork unitOfWork)
+        public HomeController(IUnitOfWork unitOfWork)
         {
-            _logger = logger;
             _unitOfWork = unitOfWork;
         }
 
@@ -36,8 +35,8 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
             try
             {
                 // get the previous count of the shopping cart bag that has the asame product and user. it could be zero
-                int prevCount = _unitOfWork.ShoppingCartProducts.GetFirstOrDefault(u => u.ApplicationUserId == ApplicationUserId && u.ProductId == productId).Count;
-                ShoppingCartProductVM shoppingCart = new()
+                int prevCount = _unitOfWork.CartProducts.GetFirstOrDefault(u => u.ApplicationUserId == ApplicationUserId && u.ProductId == productId).Count;
+                CartProductViewModel shoppingCart = new()
                 {
                     ProductId = productId,
                     Count = prevCount != 0 ? prevCount : 1,
@@ -47,7 +46,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
             }
             catch (NullReferenceException)
             {
-                ShoppingCartProductVM shoppingCart = new()
+                CartProductViewModel shoppingCart = new()
                 {
                     ProductId = productId,
                     Count = 1,
@@ -60,20 +59,20 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public IActionResult Details(ShoppingCartProduct shoppingCartProduct)
+        public IActionResult Details(CartProduct cartProduct)
         {
             ApplicationUserId = GetUserId();
 
-            shoppingCartProduct.ApplicationUserId = ApplicationUserId;
+            cartProduct.ApplicationUserId = ApplicationUserId;
 
-            ShoppingCartProduct dbshoppingCartProduct = _unitOfWork.ShoppingCartProducts.GetFirstOrDefault(
-            u => u.ApplicationUserId == shoppingCartProduct.ApplicationUserId && u.ProductId == shoppingCartProduct.ProductId);
+            CartProduct dbCartProduct = _unitOfWork
+                .CartProducts
+                .GetFirstOrDefault(u => u.ApplicationUserId == cartProduct.ApplicationUserId && u.ProductId == cartProduct.ProductId);
 
-
-            if (dbshoppingCartProduct != null)
-                _unitOfWork.ShoppingCartProducts.Update(dbshoppingCartProduct, shoppingCartProduct.Count);
+            if (dbCartProduct != null)
+                _unitOfWork.CartProducts.Update(dbCartProduct, cartProduct.Count);
             else
-                _unitOfWork.ShoppingCartProducts.Add(shoppingCartProduct);
+                _unitOfWork.CartProducts.Add(cartProduct);
             _unitOfWork.Save();
 
             return RedirectToAction(nameof(Index));
@@ -87,15 +86,5 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
             return claim.Value;
         }
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
     }
 }
