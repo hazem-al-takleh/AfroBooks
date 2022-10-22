@@ -105,19 +105,19 @@ namespace AfroBooksWeb.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult UpdateOrderDetail()
         {
-            var orderHEaderFromDb = _unitOfWork.OrdersHeaders.GetFirstOrDefault(u => u.Id == OrderVM.OrderHeader.Id);
-            orderHEaderFromDb.Name = OrderVM.OrderHeader.Name;
-            orderHEaderFromDb.PhoneNumber = OrderVM.OrderHeader.PhoneNumber;
-            orderHEaderFromDb.StreetAddress = OrderVM.OrderHeader.StreetAddress;
-            orderHEaderFromDb.City = OrderVM.OrderHeader.City;
+            var orderHeaderFromDb = _unitOfWork.OrdersHeaders.GetFirstOrDefault(u => u.Id == OrderVM.OrderHeader.Id);
+            orderHeaderFromDb.Name = OrderVM.OrderHeader.Name;
+            orderHeaderFromDb.PhoneNumber = OrderVM.OrderHeader.PhoneNumber;
+            orderHeaderFromDb.StreetAddress = OrderVM.OrderHeader.StreetAddress;
+            orderHeaderFromDb.City = OrderVM.OrderHeader.City;
             if (OrderVM.OrderHeader.Carrier != null)
-                orderHEaderFromDb.Carrier = OrderVM.OrderHeader.Carrier;
-            if (OrderVM.OrderHeader.TrackingNumber != null)
-                orderHEaderFromDb.TrackingNumber = OrderVM.OrderHeader.TrackingNumber;
-            _unitOfWork.OrdersHeaders.Update(orderHEaderFromDb);
+                orderHeaderFromDb.Carrier = OrderVM.OrderHeader.Carrier;
+            if (OrderVM.OrderHeader.TrackingNumber != null) 
+                orderHeaderFromDb.TrackingNumber = OrderVM.OrderHeader.TrackingNumber;
+            _unitOfWork.OrdersHeaders.Update(orderHeaderFromDb);
             _unitOfWork.Save();
             TempData["Success"] = "Order Details Updated Successfully.";
-            return RedirectToAction("Details", "Order", new { orderId = orderHEaderFromDb.Id });
+            return RedirectToAction("Details", "Order", new { orderId = orderHeaderFromDb.Id });
         }
 
         [HttpPost]
