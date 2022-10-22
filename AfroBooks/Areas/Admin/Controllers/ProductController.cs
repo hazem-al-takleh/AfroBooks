@@ -1,6 +1,8 @@
 ﻿using AfroBooks.DataAccess.Repositry.IRepositry;
 using AfroBooks.Models;
 using AfroBooks.Models.ViewModels;
+using AfroBooks.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -8,6 +10,7 @@ namespace AfroBooksWeb.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [BindProperties]
+    [Authorize(Roles = SD.RoleAdmin)]
     public class ProductController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;

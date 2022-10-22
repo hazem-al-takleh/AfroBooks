@@ -2,11 +2,14 @@
 using AfroBooks.DataAccess.Repositry;
 using AfroBooks.DataAccess.Repositry.IRepositry;
 using AfroBooks.Models;
+using AfroBooks.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AfroBooksWeb.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles =SD.RoleAdmin)]
     public class CategoryController : Controller
     {
         // repo pattern subsitute the  ApplicationDbContext with a Category repo

@@ -1,11 +1,15 @@
 ﻿using AfroBooks.DataAccess.Repositry.IRepositry;
 using AfroBooks.Models;
+using AfroBooks.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace AfroBooksWeb.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = SD.RoleAdmin)]
+
     public class CompanyController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;

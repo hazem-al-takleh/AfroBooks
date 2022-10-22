@@ -1,12 +1,14 @@
 ﻿using AfroBooks.DataAccess.Repositry.IRepositry;
 using AfroBooks.Models;
+using AfroBooks.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AfroBooksWeb.Areas.Admin.Controllers
 {
     [Area("Admin")]
-
+    [Authorize(Roles = SD.RoleAdmin)]
     public class CoverTypeController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
