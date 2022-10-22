@@ -38,8 +38,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                 CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == ApplicationUserId, "Product"),
                 OrderHeader = new()
             };
-            OrderTotal = CalcOrderTotal();
-            cartOrderViewModel.OrderHeader.OrderTotal = OrderTotal;
+            cartOrderViewModel.OrderHeader.OrderTotal = CalcOrderTotal();
             return View(cartOrderViewModel);
         }
 
@@ -78,7 +77,6 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                 CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == ApplicationUserId, "Product"),
                 OrderHeader = new()
             };
-            OrderTotal = CalcOrderTotal();
 
             cartOrderViewModel.OrderHeader.ApplicationUser = _unitOfWork.ApplicationUsers.GetFirstOrDefault(u => u.Id == ApplicationUserId);
             var orderUser = cartOrderViewModel.OrderHeader.ApplicationUser;
@@ -87,7 +85,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
             cartOrderViewModel.OrderHeader.City = orderUser.City;
             cartOrderViewModel.OrderHeader.Name = orderUser.Name;
 
-            cartOrderViewModel.OrderHeader.OrderTotal = OrderTotal;
+            cartOrderViewModel.OrderHeader.OrderTotal = CalcOrderTotal();
             return View(cartOrderViewModel);
         }
 
@@ -111,12 +109,25 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                 .ApplicationUsers
                 .GetFirstOrDefault(u => u.Id == ApplicationUserId)
                 .CompanyId;
+
+
+
             if (companyId != null)
             {
                 cartOrderViewModel.OrderHeader.OrderStatus = SD.StatusApproved;
                 cartOrderViewModel.OrderHeader.PaymentStatus = SD.PaymentStatusDelayedPayment;
                 cartOrderViewModel.OrderHeader.PaymentDueDate = DateTime.Now.AddDays(30);
                 _unitOfWork.OrdersHeaders.Add(cartOrderViewModel.OrderHeader);
+                _unitOfWork.Save();
+                List<OrderDetail> orderDetails = (from cart in cartOrderViewModel.CartProducts
+                                                  select new OrderDetail()
+                                                  {
+                                                      OrderId = cartOrderViewModel.OrderHeader.Id,
+                                                      ProductId = cart.ProductId,
+                                                      Count = cart.Count,
+                                                      Price = cart.Price,
+                                                  }).ToList();
+                _unitOfWork.OrdersDetails.AddRange(orderDetails);
                 _unitOfWork.Save();
 
                 return RedirectToAction("OrderConfirmation", "Cart", new { id = cartOrderViewModel.OrderHeader.Id });
@@ -143,41 +154,32 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
 
             // stripe optinos for Indivisual users
             string domain = "https://localhost:7205";
-            var options = new SessionCreateOptions
+            var options = new SessionCreateOptions()
             {
-                PaymentMethodTypes = new List<string>
-                {
-                  "card",
-                },
-                LineItems = new List<SessionLineItemOptions>(),
+                PaymentMethodTypes = new List<string> { "card" },
+                LineItems = (from cart in cartOrderViewModel.CartProducts
+                             select new SessionLineItemOptions()
+                             {
+                                 PriceData = new SessionLineItemPriceDataOptions()
+                                 {
+                                     UnitAmount = (long)(cart.Price * 100),
+                                     Currency = "usd",
+                                     ProductData = new SessionLineItemPriceDataProductDataOptions
+                                     {
+                                         Name = cart.Product.Title,
+                                     },
+                                 },
+                                 Quantity = cart.Count
+                             }).ToList(),
                 Mode = "payment",
                 SuccessUrl = domain + $"/Customer/cart/OrderConfirmation?id={cartOrderViewModel.OrderHeader.Id}",
                 CancelUrl = domain + $"/Customer/cart/Index",
             };
 
-
-            foreach (var item in cartOrderViewModel.CartProducts)
-            {
-                options.LineItems.Add(new SessionLineItemOptions()
-                {
-                    PriceData = new SessionLineItemPriceDataOptions
-                    {
-                        // UnitAmount is in cents
-                        UnitAmount = (long)(item.Price * 100),
-                        Currency = "usd",
-                        ProductData = new SessionLineItemPriceDataProductDataOptions
-                        {
-                            Name = item.Product.Title
-                        },
-                    },
-                    Quantity = item.Count,
-                });
-            }
-
             // create a stripe service session based on the optinos which is the cart creds
             var service = new SessionService();
             Session session = service.Create(options);
-            _unitOfWork.OrdersHeaders.UpdateStripePaymentID(cartOrderViewModel.OrderHeader.Id, session.Id, session.PaymentIntentId);
+            _unitOfWork.OrdersHeaders.UpdateStripeSessionId(cartOrderViewModel.OrderHeader.Id, session.Id);
             _unitOfWork.Save();
 
             Response.Headers.Add("Location", session.Url);
@@ -188,17 +190,18 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         public IActionResult OrderConfirmation(int id)
         {
             OrderHeader orderHeader = _unitOfWork.OrdersHeaders.GetFirstOrDefault(u => u.Id == id, "ApplicationUser");
-            // check if user is company and has not payed yet
+
+            // check if user is not company and has not payed yet
             if (orderHeader.PaymentStatus != SD.PaymentStatusDelayedPayment)
             {
                 var service = new SessionService();
                 Session session = service.Get(orderHeader.SessionId);
+                string paymentIntentId = service.Get(orderHeader.SessionId).PaymentIntentId;
+                _unitOfWork.OrdersHeaders.UpdateStripePaymentIntentId(id, paymentIntentId);
                 //check the stripe status to see if payment is made
                 if (session.PaymentStatus.ToLower() == "paid")
-                {
                     _unitOfWork.OrdersHeaders.UpdateStatus(id, SD.StatusApproved, SD.PaymentStatusApproved);
-                    _unitOfWork.Save();
-                }
+                _unitOfWork.Save();
             }
             //_emailSender.SendEmailAsync(orderHeader.ApplicationUser.Email, "New Order - Bulky Book", "<p>New Order Created</p>");
             List<CartProduct> shoppingCarts = _unitOfWork

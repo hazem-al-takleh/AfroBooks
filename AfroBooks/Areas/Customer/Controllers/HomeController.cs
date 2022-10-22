@@ -36,27 +36,18 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                 .CartProducts
                 .GetFirstOrDefaultNullable(u => u.ApplicationUserId == ApplicationUserId && u.ProductId == productId);
 
-            if (cart != null)
+            CartProductViewModel shoppingCart = new()
             {
+                ProductId = productId,
+                Count = 1,
+                Product = _unitOfWork.Products.GetFirstOrDefault(u => u.Id == productId, "ProductCategory", "ProductCoverType")
+            };
 
-                CartProductViewModel shoppingCart = new()
-                {
-                    ProductId = productId,
-                    Count = cart.Count,
-                    Product = _unitOfWork.Products.GetFirstOrDefault(u => u.Id == productId, "ProductCategory", "ProductCoverType")
-                };
+            if (cart == null)
                 return View(shoppingCart);
-            }
-            else
-            {
-                CartProductViewModel shoppingCart = new()
-                {
-                    ProductId = productId,
-                    Count = 1,
-                    Product = _unitOfWork.Products.GetFirstOrDefault(u => u.Id == productId, "ProductCategory", "ProductCoverType")
-                };
-                return View(shoppingCart);
-            }
+
+            shoppingCart.Count = cart.Count;
+            return View(shoppingCart);
         }
 
 

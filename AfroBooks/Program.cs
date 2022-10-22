@@ -10,6 +10,8 @@ using System.Security.Principal;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using AfroBooks.Utility;
 using Stripe;
+using Microsoft.Net.Http.Headers;
+using System.Security.Policy;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,7 +56,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
-
+ 
 var app = builder.Build();
 
 // HTTP request pipeline: How the app responds to web requests

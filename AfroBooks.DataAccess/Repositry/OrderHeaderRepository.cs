@@ -37,11 +37,16 @@ namespace AfroBooks.DataAccess.Repositry
             }
         }
 
-        public void UpdateStripePaymentID(int id, string sessionId, string paymentItentId)
+        public void UpdateStripeSessionId(int id, string sessionId)
+        {
+            var orderFromDb = _context.OrdersHeaders.FirstOrDefault(u => u.Id == id);
+            orderFromDb.SessionId = sessionId;
+        }
+
+        public void UpdateStripePaymentIntentId(int id, string paymentItentId)
         {
             var orderFromDb = _context.OrdersHeaders.FirstOrDefault(u => u.Id == id);
             orderFromDb.PaymentDate = DateTime.Now;
-            orderFromDb.SessionId = sessionId;
             orderFromDb.PaymentIntentId = paymentItentId;
         }
     }

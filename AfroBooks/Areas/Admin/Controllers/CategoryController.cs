@@ -25,7 +25,6 @@ namespace AfroBooksWeb.Areas.Admin.Controllers
 
         public IActionResult Index()
         {
-            //IEnumerable<Category> categoriesList = _unitOfWork.Categories;
             IEnumerable<Category> categoriesList = _unitOfWork.Categories.GetAll();
             return View(categoriesList);
         }
