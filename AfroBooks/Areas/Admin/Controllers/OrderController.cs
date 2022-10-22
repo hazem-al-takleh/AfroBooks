@@ -69,7 +69,7 @@ namespace AfroBooksWeb.Areas.Admin.Controllers
                                  Quantity = cart.Count
                              }).ToList(),
                 Mode = "payment",
-                SuccessUrl = domain + $"/Admin/Order/PaymentConfirmation?orderHeaderid={orderId}",
+                SuccessUrl = domain + $"/Admin/Order/PaymentConfirmation?id={orderId}",
                 CancelUrl = domain + $"/Admin/Order/Index",
             };
 
@@ -83,21 +83,21 @@ namespace AfroBooksWeb.Areas.Admin.Controllers
             return new StatusCodeResult(303);
         }
 
-        public IActionResult PaymentConfirmation(int orderHeaderid)
+        public IActionResult PaymentConfirmation(int id)
         {
-            OrderHeader orderHeader = _unitOfWork.OrdersHeaders.GetFirstOrDefault(u => u.Id == orderHeaderid);
+            OrderHeader orderHeader = _unitOfWork.OrdersHeaders.GetFirstOrDefault(u => u.Id == id);
             if (orderHeader.PaymentStatus == SD.PaymentStatusDelayedPayment)
             {
                 var service = new SessionService();
                 Session session = service.Get(orderHeader.SessionId);
-                string paymentIntentId = service.Get(orderHeader.SessionId).PaymentIntentId;
-                _unitOfWork.OrdersHeaders.UpdateStripePaymentIntentId(orderHeaderid, paymentIntentId);
+                _unitOfWork.OrdersHeaders.UpdateStripePaymentIntentId(id, session.PaymentIntentId);
+
                 //check the stripe status
                 if (session.PaymentStatus.ToLower() == "paid")
-                    _unitOfWork.OrdersHeaders.UpdateStatus(orderHeaderid, orderHeader.OrderStatus, SD.PaymentStatusApproved);
+                    _unitOfWork.OrdersHeaders.UpdateStatus(id, orderHeader.OrderStatus, SD.PaymentStatusApproved);
                 _unitOfWork.Save();
             }
-            return View(orderHeaderid);
+            return View(id);
         }
 
         [HttpPost]
@@ -141,10 +141,8 @@ namespace AfroBooksWeb.Areas.Admin.Controllers
             orderHeader.Carrier = OrderVM.OrderHeader.Carrier;
             orderHeader.OrderStatus = SD.StatusShipped;
             orderHeader.ShippingDate = DateTime.Now;
-            if (orderHeader.PaymentStatus == SD.PaymentStatusDelayedPayment)
-            {
-                orderHeader.PaymentDueDate = DateTime.Now.AddDays(30);
-            }
+            //if (orderHeader.PaymentStatus == SD.PaymentStatusDelayedPayment)
+            //    orderHeader.PaymentDueDate = DateTime.Now.AddDays(30);
             _unitOfWork.OrdersHeaders.Update(orderHeader);
             _unitOfWork.Save();
             TempData["Success"] = "Order Shipped Successfully.";

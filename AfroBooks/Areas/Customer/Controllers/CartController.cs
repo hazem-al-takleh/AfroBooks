@@ -22,7 +22,6 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         private readonly IUnitOfWork _unitOfWork;
         public CartOrderViewModel cartOrderViewModel { get; set; }
         public double OrderTotal { get; set; }
-        public string ApplicationUserId { get; private set; }
 
         public CartController(IUnitOfWork unitOfWork)
         {
@@ -31,61 +30,32 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
 
         public IActionResult Index()
         {
-            ApplicationUserId = GetUserId();
-
             cartOrderViewModel = new CartOrderViewModel()
             {
-                CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == ApplicationUserId, "Product"),
+                CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == GetUserId(), "Product"),
                 OrderHeader = new()
             };
             cartOrderViewModel.OrderHeader.OrderTotal = CalcOrderTotal();
             return View(cartOrderViewModel);
         }
 
-        public IActionResult Plus(int cartId)
-        {
-            var cart = _unitOfWork.CartProducts.GetFirstOrDefault(u => u.Id == cartId);
-            _unitOfWork.CartProducts.Update(cart, cart.Count + 1);
-            _unitOfWork.Save();
-            return RedirectToAction(nameof(Index));
-        }
-
-        public IActionResult Minus(int cartId)
-        {
-            var cart = _unitOfWork.CartProducts.GetFirstOrDefault(u => u.Id == cartId);
-            if (cart.Count > 1)
-                _unitOfWork.CartProducts.Update(cart, cart.Count - 1);
-            else
-                _unitOfWork.CartProducts.Remove(cart);
-            _unitOfWork.Save();
-            return RedirectToAction(nameof(Index));
-        }
-
-        public IActionResult Remove(int cartId)
-        {
-            var cart = _unitOfWork.CartProducts.GetFirstOrDefault(u => u.Id == cartId);
-            _unitOfWork.CartProducts.Remove(cart);
-            _unitOfWork.Save();
-            return RedirectToAction(nameof(Index));
-        }
-
+        // Summary page
         public IActionResult Summary()
         {
-            ApplicationUserId = GetUserId();
             cartOrderViewModel = new CartOrderViewModel()
             {
-                CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == ApplicationUserId, "Product"),
+                CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == GetUserId(), "Product"),
                 OrderHeader = new()
             };
+            var orderUser = _unitOfWork.ApplicationUsers.GetFirstOrDefault(u => u.Id == GetUserId());
 
-            cartOrderViewModel.OrderHeader.ApplicationUser = _unitOfWork.ApplicationUsers.GetFirstOrDefault(u => u.Id == ApplicationUserId);
-            var orderUser = cartOrderViewModel.OrderHeader.ApplicationUser;
+            cartOrderViewModel.OrderHeader.ApplicationUser = orderUser;
             cartOrderViewModel.OrderHeader.PhoneNumber = orderUser.PhoneNumber;
             cartOrderViewModel.OrderHeader.StreetAddress = orderUser.StreetName;
             cartOrderViewModel.OrderHeader.City = orderUser.City;
             cartOrderViewModel.OrderHeader.Name = orderUser.Name;
-
             cartOrderViewModel.OrderHeader.OrderTotal = CalcOrderTotal();
+
             return View(cartOrderViewModel);
         }
 
@@ -94,24 +64,21 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult SummaryPost(CartOrderViewModel cartOrderViewModel)
         {
-            ApplicationUserId = GetUserId();
-            cartOrderViewModel.CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == ApplicationUserId, "Product");
-            OrderTotal = CalcOrderTotal(cartOrderViewModel);
-
+            cartOrderViewModel.CartProducts = _unitOfWork
+                .CartProducts
+                .GetAll(u => u.ApplicationUserId == GetUserId(), "Product");
 
             cartOrderViewModel.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
             cartOrderViewModel.OrderHeader.OrderStatus = SD.StatusPending;
             cartOrderViewModel.OrderHeader.OrderDate = DateTime.Now;
-            cartOrderViewModel.OrderHeader.ApplicationUserId = ApplicationUserId;
-            cartOrderViewModel.OrderHeader.OrderTotal = OrderTotal;
+            cartOrderViewModel.OrderHeader.ApplicationUserId = GetUserId();
+            cartOrderViewModel.OrderHeader.OrderTotal = CalcOrderTotal(cartOrderViewModel);
 
             int? companyId = _unitOfWork
                 .ApplicationUsers
-                .GetFirstOrDefault(u => u.Id == ApplicationUserId)
+                .GetFirstOrDefault(u => u.Id == GetUserId())
                 .CompanyId;
-
-
-
+            // company user flow
             if (companyId != null)
             {
                 cartOrderViewModel.OrderHeader.OrderStatus = SD.StatusApproved;
@@ -129,14 +96,12 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                                                   }).ToList();
                 _unitOfWork.OrdersDetails.AddRange(orderDetails);
                 _unitOfWork.Save();
-
                 return RedirectToAction("OrderConfirmation", "Cart", new { id = cartOrderViewModel.OrderHeader.Id });
             }
 
+            // Indivisual user flow
             cartOrderViewModel.OrderHeader.OrderStatus = SD.StatusPending;
             cartOrderViewModel.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
-
-
             _unitOfWork.OrdersHeaders.Add(cartOrderViewModel.OrderHeader);
             // we can't not command a save operation bc the adding of cars in db requires the id
             // of the order that MUST BE SAVED BEFORE (depend on it)
@@ -151,8 +116,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                                               Price = cart.Price,
                                           }).ToList();
             _unitOfWork.OrdersDetails.AddRange(cartToDb);
-
-            // stripe optinos for Indivisual users
+            
             string domain = "https://localhost:7205";
             var options = new SessionCreateOptions()
             {
@@ -196,8 +160,8 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
             {
                 var service = new SessionService();
                 Session session = service.Get(orderHeader.SessionId);
-                string paymentIntentId = service.Get(orderHeader.SessionId).PaymentIntentId;
-                _unitOfWork.OrdersHeaders.UpdateStripePaymentIntentId(id, paymentIntentId);
+                _unitOfWork.OrdersHeaders.UpdateStripePaymentIntentId(id, session.PaymentIntentId);
+
                 //check the stripe status to see if payment is made
                 if (session.PaymentStatus.ToLower() == "paid")
                     _unitOfWork.OrdersHeaders.UpdateStatus(id, SD.StatusApproved, SD.PaymentStatusApproved);
@@ -211,6 +175,34 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
             _unitOfWork.CartProducts.RemoveRange(shoppingCarts);
             _unitOfWork.Save();
             return View(id);
+        }
+
+
+        public IActionResult Plus(int cartId)
+        {
+            var cart = _unitOfWork.CartProducts.GetFirstOrDefault(u => u.Id == cartId);
+            _unitOfWork.CartProducts.Update(cart, cart.Count + 1);
+            _unitOfWork.Save();
+            return RedirectToAction(nameof(Index));
+        }
+
+        public IActionResult Minus(int cartId)
+        {
+            var cart = _unitOfWork.CartProducts.GetFirstOrDefault(u => u.Id == cartId);
+            if (cart.Count > 1)
+                _unitOfWork.CartProducts.Update(cart, cart.Count - 1);
+            else
+                _unitOfWork.CartProducts.Remove(cart);
+            _unitOfWork.Save();
+            return RedirectToAction(nameof(Index));
+        }
+
+        public IActionResult Remove(int cartId)
+        {
+            var cart = _unitOfWork.CartProducts.GetFirstOrDefault(u => u.Id == cartId);
+            _unitOfWork.CartProducts.Remove(cart);
+            _unitOfWork.Save();
+            return RedirectToAction(nameof(Index));
         }
 
         private double GetPriceBasedOnQuantity(int count, double priceUnit, double price50Unit, double price100Unit)

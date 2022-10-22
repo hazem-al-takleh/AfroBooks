@@ -6,8 +6,9 @@ namespace AfroBooks.DataAccess.Repositry.IRepositry
     {
         void Update(OrderHeader obj);
         void UpdateStatus(int id, string orderStatus, string? paymentStatus = null);
-        void UpdateStripeSessionId(int id, string sessionId);
+        void UpdateStripeSessionId(int id, string paymentItentId);
         void UpdateStripePaymentIntentId(int id, string paymentItentId);
+
     }
 }
 

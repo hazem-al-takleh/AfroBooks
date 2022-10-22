@@ -31,9 +31,7 @@ namespace AfroBooks.DataAccess.Repositry
             {
                 orderFromDb.OrderStatus = orderStatus;
                 if (paymentStatus != null)
-                {
                     orderFromDb.PaymentStatus = paymentStatus;
-                }
             }
         }
 
@@ -46,8 +44,9 @@ namespace AfroBooks.DataAccess.Repositry
         public void UpdateStripePaymentIntentId(int id, string paymentItentId)
         {
             var orderFromDb = _context.OrdersHeaders.FirstOrDefault(u => u.Id == id);
-            orderFromDb.PaymentDate = DateTime.Now;
             orderFromDb.PaymentIntentId = paymentItentId;
+            orderFromDb.PaymentDate = DateTime.Now;
         }
+
     }
 }
