@@ -45,17 +45,18 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         public IActionResult Summary()
         {
             var orderUser = _unitOfWork.ApplicationUsers.GetFirstOrDefault(u => u.Id == GetUserId());
+            var cartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == GetUserId(), "Product");
 
             cartOrderViewModel = new CartOrderViewModel()
             {
-                CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == GetUserId(), "Product"),
+                CartProducts = cartProducts,
                 OrderHeader = new()
                 {
                     ApplicationUser = orderUser,
                     PhoneNumber = orderUser.PhoneNumber,
                     StreetAddress = orderUser.StreetName,
                     Name = orderUser.Name,
-                    OrderTotal = CalcOrderTotal()
+                    OrderTotal = CalcOrderTotal(cartProducts)
                 }
             };
 
@@ -81,6 +82,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                 .ApplicationUsers
                 .GetFirstOrDefault(u => u.Id == GetUserId())
                 .CompanyId;
+
             // company user flow
             if (companyId != null)
             {
@@ -157,6 +159,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         public IActionResult OrderConfirmation(int id)
         {
             OrderHeader orderHeader = _unitOfWork.OrdersHeaders.GetFirstOrDefault(u => u.Id == id, "ApplicationUser");
+            _emailSender.SendEmailAsync(orderHeader.ApplicationUser.Email, "New Order - AfroBook", "<p>New Order Created</p>");
 
             // check if user is not company and has not payed yet
             if (orderHeader.PaymentStatus != SD.PaymentStatusDelayedPayment)
@@ -236,6 +239,16 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         {
             double OrderTotal = 0;
             foreach (CartProduct cart in cartOrderViewModel.CartProducts)
+            {
+                cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.PriceUnit, cart.Product.Price50Unit, cart.Product.Price100Unit);
+                OrderTotal += (cart.Price * cart.Count);
+            }
+            return OrderTotal;
+        }
+        private double CalcOrderTotal(IEnumerable<CartProduct> CartProducts)
+        {
+            double OrderTotal = 0;
+            foreach (CartProduct cart in CartProducts)
             {
                 cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.PriceUnit, cart.Product.Price50Unit, cart.Product.Price100Unit);
                 OrderTotal += (cart.Price * cart.Count);
