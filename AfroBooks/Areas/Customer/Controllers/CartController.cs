@@ -20,12 +20,14 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
     public class CartController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEmailSender _emailSender;
         public CartOrderViewModel cartOrderViewModel { get; set; }
         public double OrderTotal { get; set; }
 
-        public CartController(IUnitOfWork unitOfWork)
+        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender)
         {
             _unitOfWork = unitOfWork;
+            _emailSender = emailSender;
         }
 
         public IActionResult Index()
@@ -42,19 +44,20 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
         // Summary page
         public IActionResult Summary()
         {
+            var orderUser = _unitOfWork.ApplicationUsers.GetFirstOrDefault(u => u.Id == GetUserId());
+
             cartOrderViewModel = new CartOrderViewModel()
             {
                 CartProducts = _unitOfWork.CartProducts.GetAll(u => u.ApplicationUserId == GetUserId(), "Product"),
                 OrderHeader = new()
+                {
+                    ApplicationUser = orderUser,
+                    PhoneNumber = orderUser.PhoneNumber,
+                    StreetAddress = orderUser.StreetName,
+                    Name = orderUser.Name,
+                    OrderTotal = CalcOrderTotal()
+                }
             };
-            var orderUser = _unitOfWork.ApplicationUsers.GetFirstOrDefault(u => u.Id == GetUserId());
-
-            cartOrderViewModel.OrderHeader.ApplicationUser = orderUser;
-            cartOrderViewModel.OrderHeader.PhoneNumber = orderUser.PhoneNumber;
-            cartOrderViewModel.OrderHeader.StreetAddress = orderUser.StreetName;
-            cartOrderViewModel.OrderHeader.City = orderUser.City;
-            cartOrderViewModel.OrderHeader.Name = orderUser.Name;
-            cartOrderViewModel.OrderHeader.OrderTotal = CalcOrderTotal();
 
             return View(cartOrderViewModel);
         }
@@ -116,7 +119,7 @@ namespace AfroBooksWeb.Areas.Customer.Controllers
                                               Price = cart.Price,
                                           }).ToList();
             _unitOfWork.OrdersDetails.AddRange(cartToDb);
-            
+
             string domain = "https://localhost:7205";
             var options = new SessionCreateOptions()
             {

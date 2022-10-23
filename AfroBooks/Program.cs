@@ -12,6 +12,7 @@ using AfroBooks.Utility;
 using Stripe;
 using Microsoft.Net.Http.Headers;
 using System.Security.Policy;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,7 +57,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
- 
+builder.Services.Configure<MailSettings>(builder.Configuration.GetSection(nameof(MailSettings)));
+
+
 var app = builder.Build();
 
 // HTTP request pipeline: How the app responds to web requests
